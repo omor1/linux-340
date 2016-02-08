@@ -30,7 +30,9 @@ asmlinkage long sys_task_info(struct task_info __user *buf, size_t len)
 		}
 		kbuf[i].pid = task_pid_nr(task);
 		tty_name(task->signal->tty, kbuf[i].tty_name);
-		kbuf[i].secs = cputime_to_secs(task->utime + task->stime);
+		cputime_t utime, stime;
+		thread_group_cputime_adjusted(task, &utime, &stime);
+		kbuf[i].nsecs = cputime_to_nsecs(utime + stime);
 		get_task_comm(kbuf[i].comm, task);
 		i++;
 	}
