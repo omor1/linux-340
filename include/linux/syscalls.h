@@ -66,6 +66,7 @@ struct perf_event_attr;
 struct file_handle;
 struct sigaltstack;
 union bpf_attr;
+struct task_info;
 
 #include <linux/types.h>
 #include <linux/aio_abi.h>
@@ -883,5 +884,9 @@ asmlinkage long sys_bpf(int cmd, union bpf_attr *attr, unsigned int size);
 asmlinkage long sys_execveat(int dfd, const char __user *filename,
 			const char __user *const __user *argv,
 			const char __user *const __user *envp, int flags);
+
+asmlinkage long sys_ntasks(size_t __user *num);
+
+asmlinkage long sys_task_info(struct task_info __user *buf, size_t len);
 
 #endif
