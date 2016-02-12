@@ -18,7 +18,7 @@ asmlinkage long sys_ntasks(size_t __user *num)
 
 asmlinkage long sys_task_info(struct task_info __user *buf, size_t len)
 {
-	long ret = 0;
+	ssize_t ret = len;
 	struct task_info ktask_info;
 	cputime_t utime, stime;
 	size_t i = 0;
@@ -37,6 +37,6 @@ asmlinkage long sys_task_info(struct task_info __user *buf, size_t len)
 		i++;
 	}
 	if (i < len)
-		ret = -E2BIG;
+		ret = i;
 	return ret;
 }
