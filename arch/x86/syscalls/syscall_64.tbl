@@ -332,7 +332,6 @@
 323	common	ntasks			sys_ntasks
 324	common	task_info		sys_task_info
 
-
 #
 # x32-specific system call numbers start at 512 to avoid cache impact
 # for native 64-bit operation.
