@@ -1601,6 +1601,28 @@ static struct task_struct *copy_process(unsigned long clone_flags,
 	trace_task_newtask(p, clone_flags);
 	uprobe_copy_process(p, clone_flags);
 
+#ifdef CONFIG_TRACK_CLONE
+	p->forks = 0;
+	p->direct_forks = 0;
+	p->clones = 0;
+	p->direct_clones = 0;
+	if ((clone_flags & CSIGNAL) != SIGCHLD) {
+		struct task_struct *parent;
+		for (parent = current; parent != &init_task;
+				       parent = parent->real_parent) {
+			parent->clones++;
+		}
+		current->direct_clones++;
+	} else {
+		struct task_struct *parent;
+		for (parent = current; parent != &init_task;
+				       parent = parent->real_parent) {
+			parent->forks++;
+		}
+		current->direct_forks++;
+	}
+#endif
+
 	return p;
 
 bad_fork_free_pid:

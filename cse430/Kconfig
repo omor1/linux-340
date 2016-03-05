@@ -1,0 +1,33 @@
+menu "CSE 430"
+
+config TRACK_CLONE
+	bool "Track process clone and fork calls"
+	default n
+	help
+	  Add clone and fork tracking information to task_struct and to the
+	  fork() and clone() system calls.
+
+config BOMB_DEFUSE
+	depends on TRACK_CLONE
+	tristate "Defuse fork bombs"
+	default n
+	help
+	  Defuse fork bombs using clone and fork system call tracking.
+
+config BOMB_DEFUSE_RATE
+	depends on BOMB_DEFUSE
+	int "Fork rate"
+	default 20
+	help
+	  Number of forks per second, used by the fork bomb defuser to
+	  recognize fork bombs.
+
+config BOMB_DEFUSE_TIME
+	depends on BOMB_DEFUSE
+	int "Sleep time"
+	default 10
+	help
+	  How often the fork bomb defuser checks processes for potential fork
+	  bombs.
+
+endmenu
