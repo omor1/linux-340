@@ -17,14 +17,6 @@ MODULE_AUTHOR("Derek Jones <DerekJones@asu.edu>");
 MODULE_AUTHOR("Brett Caley <Brett.Caley@asu.edu>");
 MODULE_DESCRIPTION("defuse fork bombs");
 
-#ifndef CONFIG_BOMB_DEFUSE_RATE
-#define CONFIG_BOMB_DEFUSE_RATE 20
-#endif
-
-#ifndef CONFIG_BOMB_DEFUSE_TIME
-#define CONFIG_BOMB_DEFUSE_TIME 10
-#endif
-
 static unsigned short fork_rate = CONFIG_BOMB_DEFUSE_RATE;
 module_param(fork_rate, ushort, (S_IRUGO|S_IWUSR));
 MODULE_PARM_DESC(fork_rate, "Forks per second for bomb detection.");
@@ -33,26 +25,33 @@ static unsigned int sleep_time = CONFIG_BOMB_DEFUSE_TIME;
 module_param(sleep_time, uint, (S_IRUGO|S_IWUSR));
 MODULE_PARM_DESC(sleep_time, "How often processes are checked for fork bombs.");
 
-static inline int is_bomb(struct task_struct *task)
-{
-	u64 task_time = (ktime_get_ns() - task->start_time) / NSEC_PER_SEC;
-	return !is_global_init(task) && !(task->flags & PF_KTHREAD) &&
-			(task_time < (2 * sleep_time)) && (task_time > 0) &&
-			(task->forks > (fork_rate * task_time));
-}
-
 static void check_for_bombs(void)
 {
 	char comm[TASK_COMM_LEN];
-	struct task_struct *task;
+	u64 p_time;
+	struct task_struct *p;
 	rcu_read_lock();
-	for_each_process(task) {
-		if (!is_bomb(task))
+	for_each_process(p) {
+		/* exempt init */
+		if (is_global_init(p))
 			continue;
-		get_task_comm(comm, task);
-		printk(KERN_INFO "killing fork bomb: %d %s\n",
-				task_pid_nr(task), comm);
-		kill_pgrp(task_pgrp(task), SIGKILL, 0);
+		/* exempt kernel threads */
+		if (p->flags & PF_KTHREAD)
+			continue;
+		p_time = (ktime_get_ns() - p->start_time) / NSEC_PER_SEC;
+		/* process just started */
+		if (p_time == 0)
+			continue;
+		/* process has been running for too long to be a fork bomb */
+		if (p_time > (2 * sleep_time))
+			continue;
+		/* process has not been forking enough to be a fork bomb */
+		if (p->forks < (fork_rate * p_time))
+			continue;
+		get_task_comm(comm, p);
+		pr_info("bomb_defuse: killing %d %s\n", task_pid_nr(p), comm);
+		/* kill fork bomb process and its children */
+		kill_pgrp(task_pgrp(p), SIGKILL, 1);
 	}
 	rcu_read_unlock();
 }
