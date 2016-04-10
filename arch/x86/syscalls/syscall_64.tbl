@@ -331,6 +331,7 @@
 322	64	execveat		stub_execveat
 323	common	ntasks			sys_ntasks
 324	common	task_info		sys_task_info
+325	common	get_addr		sys_get_addr
 
 #
 # x32-specific system call numbers start at 512 to avoid cache impact

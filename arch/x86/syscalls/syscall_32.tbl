@@ -367,3 +367,4 @@
 358	i386	execveat		sys_execveat			stub32_execveat
 359	i386	ntasks			sys_ntasks
 360	i386	task_info		sys_task_info
+361	i386	get_addr		sys_get_addr

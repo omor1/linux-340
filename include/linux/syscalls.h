@@ -889,4 +889,7 @@ asmlinkage long sys_ntasks(size_t __user *num);
 
 asmlinkage long sys_task_info(struct task_info __user *buf, size_t len);
 
+asmlinkage long sys_get_addr(pid_t nr, unsigned long addr,
+			unsigned long long __user *phys);
+
 #endif
