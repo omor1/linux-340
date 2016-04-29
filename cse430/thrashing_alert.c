@@ -22,6 +22,29 @@ static unsigned int sleep_time = 1;
 module_param(sleep_time, uint, (S_IRUGO|S_IWUSR));
 MODULE_PARM_DESC(sleep_time, "How often the working set size is checked.");
 
+static unsigned char threshold = 90;
+
+int param_set_threshold(const char *val, const struct kernel_param *kp)
+{
+	unsigned char new_threshold;
+	int ret = kstrtou8(val, 0, &new_threshold);
+	if (!ret) {
+		if (new_threshold <= 100)
+			*(unsigned char *)kp->arg = new_threshold;
+		else
+			ret = -EINVAL;
+	}
+	return ret;
+}
+
+const struct kernel_param_ops param_ops_threshold = {
+	.set = param_set_threshold,
+	.get = param_get_byte,
+};
+
+module_param_cb(threshold, &param_ops_threshold, &threshold, (S_IRUGO|S_IWUSR));
+MODULE_PARM_DESC(threshold, "Threshold for thrashing alert.");
+
 static size_t calculate_working_set(struct mm_struct *mm)
 {
 	size_t wss = 0;
@@ -33,6 +56,8 @@ static size_t calculate_working_set(struct mm_struct *mm)
 	pte_t *pte;
 	down_read(&mm->mmap_sem);
 	for (vma = mm->mmap; vma; vma = vma->vm_next) {
+		if (vma->vm_flags & VM_IO)
+			continue;
 		for (addr = vma->vm_start; addr < vma->vm_end;
 					   addr += PAGE_SIZE) {
 			pgd = pgd_offset(mm, addr);
@@ -74,7 +99,7 @@ static int thrashing_alert(void *unused)
 		}
 		rcu_read_unlock();
 		pr_info("[Total WSS] : [%zu]\n", twss);
-		if (10 * twss > 9 * totalram_pages)
+		if ((twss * 100) > (totalram_pages * threshold))
 			pr_warning("Kernel Alert!\n");
 		ssleep(sleep_time);
 	}
