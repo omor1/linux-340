@@ -30,4 +30,10 @@ config BOMB_DEFUSE_TIME
 	  How often the fork bomb defuser checks processes for potential fork
 	  bombs.
 
+config THRASHING_ALERT
+	tristate "Thrashing alert"
+	default n
+	help
+	  Track process working set size and alert when thrashing.
+
 endmenu

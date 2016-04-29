@@ -30,12 +30,15 @@ asmlinkage long sys_get_addr(pid_t nr, unsigned long addr,
 	rcu_read_lock();
 	p = find_task_by_vpid(nr);
 	rcu_read_unlock();
-	if (!p) {
+
+	/* if p NULL or p is dead or a zombie */
+	if (!p || (p->exit_state & (EXIT_DEAD | EXIT_ZOMBIE))) {
 		ret = -ESRCH;
 		goto out;
 	}
 
-	pgd = pgd_offset(p->mm, addr);
+	/* if p is a kernel thread, use kernel mm (kernel thread mm is NULL) */
+	pgd = p->mm ? pgd_offset(p->mm, addr) : pgd_offset_k(addr);
 	if (pgd_none(*pgd) || unlikely(pgd_bad(*pgd))) {
 		ret = -EINVAL;
 		goto out;
